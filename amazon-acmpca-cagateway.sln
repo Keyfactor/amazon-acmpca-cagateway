@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31729.503
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "amazon-acmpca-cagateway", "amazon-acmpca-cagateway\amazon-acmpca-cagateway.csproj", "{9FD1B87E-0568-445A-B962-A886DF100B9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "amazon-acmpca-testbed", "amazon-acmpca-testbed\amazon-acmpca-testbed.csproj", "{864E3D02-7161-4EAA-9978-537FD72B71DE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FEDD6EFB-7E46-47B5-A013-CB49160EF9DC}"
+	ProjectSection(SolutionItems) = preProject
+		readme_source.md = readme_source.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FD1B87E-0568-445A-B962-A886DF100B9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FD1B87E-0568-445A-B962-A886DF100B9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FD1B87E-0568-445A-B962-A886DF100B9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FD1B87E-0568-445A-B962-A886DF100B9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{864E3D02-7161-4EAA-9978-537FD72B71DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{864E3D02-7161-4EAA-9978-537FD72B71DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{864E3D02-7161-4EAA-9978-537FD72B71DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{864E3D02-7161-4EAA-9978-537FD72B71DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {23315A9E-7B89-4A89-8665-B9944E29FF62}
+	EndGlobalSection
+EndGlobal
