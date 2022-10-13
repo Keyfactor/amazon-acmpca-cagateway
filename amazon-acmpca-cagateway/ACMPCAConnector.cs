@@ -20,6 +20,7 @@ using CAProxy.Common;
 using CSS.PKI;
 
 using Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client;
+using Keyfactor.PKI.PEM;
 
 using Newtonsoft.Json;
 
@@ -69,9 +70,10 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <returns></returns>
 		public override EnrollmentResult Enroll(ICertificateDataReader certificateDataReader, string csr, string subject, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo, PKIConstants.X509.RequestFormat requestFormat, RequestUtilities.EnrollmentType enrollmentType)
 		{
+			string csrString = PemUtilities.DERToPEM(PemUtilities.PEMToDER(csr), PemUtilities.PemObjectType.CertRequest);
 			IssueCertificateRequest issueRequest = new IssueCertificateRequest
 			{
-				Csr = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(csr))
+				Csr = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(csrString))
 			};
 
 			var days = (productInfo.ProductParameters.ContainsKey("LifetimeDays")) ? int.Parse(productInfo.ProductParameters["LifetimeDays"]) : 365;
@@ -85,11 +87,14 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 
 			string certArn = Client.RequestCertificate(issueRequest);
 
+			// Amazon API will give an error if attempting to retrieve the issued certificate before it has completed
+			Thread.Sleep(1000);
+
 			CAConnectorCertificate cert = Client.GetCertificateByARN(certArn);
 
 			return new EnrollmentResult()
 			{
-				CARequestID = certArn,
+				CARequestID = certArn.Split('/')[3],
 				Certificate = cert.Certificate,
 				Status = cert.Status,
 				StatusMessage = "Certificate Issued"
@@ -103,7 +108,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <returns></returns>
 		public override CAConnectorCertificate GetSingleRecord(string caRequestID)
 		{
-			CAConnectorCertificate cert = Client.GetCertificateByARN(caRequestID);
+			CAConnectorCertificate cert = Client.GetCertificateByRequestID(caRequestID);
 			return cert;
 		}
 
@@ -123,7 +128,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <param name="revocationReason">The revocation reason.</param>
 		public override int Revoke(string caRequestID, string hexSerialNumber, uint revocationReason)
 		{
-			string serialNum = caRequestID.Substring(caRequestID.LastIndexOf('/') + 1);
+			string serialNum = caRequestID;
 
 			RevokeCertificateRequest revokeCertificateRequest = new RevokeCertificateRequest()
 			{
@@ -192,7 +197,13 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 					if (dbCert == null) dbCert = new CAConnectorCertificate();
 					CAConnectorCertificate pcaCert = Client.GetCertificateByARN(cert.CertificateARN);
 
-					dbCert.CARequestID = cert.CertificateARN;
+					// Skip certs with unknown product types
+					if (pcaCert.ProductID.Equals("Unknown"))
+					{
+						continue;
+					}
+
+					dbCert.CARequestID = cert.CertificateARN.Split('/')[3];
 					dbCert.Certificate = pcaCert.Certificate;
 					dbCert.Status = status;
 					if (status == (int)RequestDisposition.REVOKED)
@@ -226,20 +237,6 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 			if (string.IsNullOrWhiteSpace(accessSecret))
 			{
 				errors.Add("AccessSecret is required");
-			}
-
-			string region = connectionInfo.ContainsKey(ACMPCAConstants.REGION) ? (string)connectionInfo[ACMPCAConstants.REGION] : string.Empty;
-			if (string.IsNullOrWhiteSpace(region))
-			{
-				errors.Add("Region is required");
-			}
-			else
-			{
-				var regionEndpoint = RegionEndpoint.GetBySystemName(region);
-				if (regionEndpoint.DisplayName.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
-				{
-					errors.Add("Unknown region specified");
-				}
 			}
 
 			string caarn = connectionInfo.ContainsKey(ACMPCAConstants.CAARN) ? (string)connectionInfo[ACMPCAConstants.CAARN] : string.Empty;

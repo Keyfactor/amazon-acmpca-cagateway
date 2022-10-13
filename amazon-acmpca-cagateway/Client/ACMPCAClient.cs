@@ -44,9 +44,14 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			request.CertificateAuthorityArn = Config.CAArn;
 			request.SigningAlgorithm = SigningAlgorithm.SHA256WITHRSA;
 			var response = GetPCAClient().IssueCertificate(request);
-			// Amazon API will give an error if attempting to retrieve the issued certificate before it has completed
-			Thread.Sleep(100);
+
 			return response.CertificateArn;
+		}
+
+		public CAConnectorCertificate GetCertificateByRequestID(string requestId)
+		{
+			string certArn = $"{Config.CAArn}/certificate/{requestId}";
+			return GetCertificateByARN(certArn);
 		}
 
 		public CAConnectorCertificate GetCertificateByARN(string certARN)
@@ -61,6 +66,12 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			{
 				getCertificateResponse = GetPCAClient().GetCertificate(getCertificateRequest);
 			}
+			catch (RequestInProgressException rip)
+			{
+				// If request is still in progress, wait a second and try again
+				Thread.Sleep(1000);
+				return GetCertificateByARN(certARN);
+			}
 			catch (AmazonACMPCAException aex)
 			{
 				Logger.Error($"Error retrieving certificate: {aex.Message}");
@@ -73,21 +84,29 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			X509Certificate2 cert = CertificateConverterFactory.FromPEM(getCertificateResponse.Certificate).ToX509Certificate2();
 
 			bool server = false, client = false;
-
+			string product = "EndEntity";
 			// Look at enhanced key usage OIDs to determine if the cert is ServerAuth, ClientAuth, or both
-			var enhKeyUsage = cert.Extensions[ENHANCED_KEY_USAGE_OID] as X509EnhancedKeyUsageExtension;
-			foreach (var usage in enhKeyUsage.EnhancedKeyUsages)
+			try
 			{
-				if (usage.Value.Equals(SERVER_AUTH_OID))
+				var enhKeyUsage = cert.Extensions[ENHANCED_KEY_USAGE_OID] as X509EnhancedKeyUsageExtension;
+				foreach (var usage in enhKeyUsage.EnhancedKeyUsages)
 				{
-					server = true;
-				}
-				else if (usage.Value.Equals(CLIENT_AUTH_OID))
-				{
-					client = true;
+					if (usage.Value.Equals(SERVER_AUTH_OID))
+					{
+						server = true;
+					}
+					else if (usage.Value.Equals(CLIENT_AUTH_OID))
+					{
+						client = true;
+					}
 				}
 			}
-			string product = "EndEntity";
+			catch (Exception)
+			{
+				// If ENHANCED_KEY_USAGE_OID is not preset, its a different key usage (most likely a CA cert)
+				product = "Unknown";
+			}
+
 			if (server && !client)
 			{
 				product += "ServerAuth";
@@ -99,7 +118,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 
 			return new CAConnectorCertificate
 			{
-				CARequestID = certARN,
+				CARequestID = certARN.Split('/')[3],
 				Certificate = !string.IsNullOrEmpty(getCertificateResponse.Certificate) ? ConfigurationUtils.OnlyBase64CertContent(getCertificateResponse.Certificate) : null,
 				Status = 20,
 				ProductID = product,
