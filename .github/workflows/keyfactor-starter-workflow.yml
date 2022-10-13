@@ -23,7 +23,7 @@ jobs:
     with:
       release_version: ${{ needs.call-create-github-release-workflow.outputs.release_version }}
       release_url: ${{ needs.call-create-github-release-workflow.outputs.release_url }}
-      release_dir: EXAMPLE_SOLUTION/bin/Release/BUILD_TARGET # TODO: set build output directory to upload as a release, relative to checkout workspace
+      release_dir: amazon-acmpca-cagateway/bin/Release
     secrets: 
       token: ${{ secrets.PRIVATE_PACKAGE_ACCESS }}
 
