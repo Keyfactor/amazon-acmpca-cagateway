@@ -17,6 +17,8 @@ In order to enroll for certificates the Keyfactor Command server must trust the 
 
 * Copy AmazonACMPCAGateway.dll to the Program Files\Keyfactor\Keyfactor AnyGateway directory
 
+* Copy all of the AWSSDK DLLs to the Program Files\Keyfactor\Keyfactor AnyGateway directory
+
 * Update the CAProxyServer.config file
   * Update the CAConnection section to point at the ACMPCAConnector class
   ```xml
