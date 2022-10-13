@@ -20,7 +20,7 @@ In order to enroll for certificates the Keyfactor Command server must trust the 
 * Update the CAProxyServer.config file
   * Update the CAConnection section to point at the ACMPCAConnector class
   ```xml
-  <alias alias="CAConnector" type="Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA, ACMPCAConnector"/>
+  <alias alias="CAConnector" type="Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.ACMPCAConnector, AmazonACMPCAGateway"/>
   ```
 
 # Configuration

@@ -144,13 +144,12 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 				S3BucketName = Config.S3Bucket,
 				AuditReportResponseFormat = AuditReportResponseFormat.JSON
 			};
-			//var response = GetPCAClient().CreateCertificateAuthorityAuditReport(request);
+			var response = GetPCAClient().CreateCertificateAuthorityAuditReport(request);
 
 			GetObjectRequest reportRequest = new GetObjectRequest()
 			{
 				BucketName = Config.S3Bucket,
-				//Key = response.S3Key
-				Key = "audit-report/46916568-f54c-4d7a-8023-accc700a8c98/197b269f-795e-4f5f-89e1-c9938dca1866.json"
+				Key = response.S3Key
 			};
 			using (var s3Client = GetS3Client())
 			using (var reportResponse = s3Client.GetObject(reportRequest))
