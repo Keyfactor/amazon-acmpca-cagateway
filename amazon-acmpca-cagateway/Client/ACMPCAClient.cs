@@ -1,4 +1,11 @@
-﻿using Amazon;
+﻿// Copyright 2022 Keyfactor
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+
+using Amazon;
 using Amazon.ACMPCA;
 using Amazon.ACMPCA.Model;
 using Amazon.S3;
@@ -41,21 +48,25 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 
 		public string RequestCertificate(IssueCertificateRequest request)
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			request.CertificateAuthorityArn = Config.CAArn;
 			request.SigningAlgorithm = SigningAlgorithm.SHA256WITHRSA;
 			var response = GetPCAClient().IssueCertificate(request);
-
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return response.CertificateArn;
 		}
 
 		public CAConnectorCertificate GetCertificateByRequestID(string requestId)
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			string certArn = $"{Config.CAArn}/certificate/{requestId}";
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return GetCertificateByARN(certArn);
 		}
 
 		public CAConnectorCertificate GetCertificateByARN(string certARN)
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			GetCertificateRequest getCertificateRequest = new GetCertificateRequest()
 			{
 				CertificateArn = certARN,
@@ -80,6 +91,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			if (string.IsNullOrEmpty(getCertificateResponse.Certificate))
 			{
 				Logger.Error($"Certificate with ARN {certARN} not found.");
+				throw new Exception($"Certificate with ARN {certARN} not found.");
 			}
 			X509Certificate2 cert = CertificateConverterFactory.FromPEM(getCertificateResponse.Certificate).ToX509Certificate2();
 
@@ -115,7 +127,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			{
 				product += "ClientAuth";
 			}
-
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return new CAConnectorCertificate
 			{
 				CARequestID = certARN.Split('/')[3],
@@ -128,6 +140,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 
 		public void VerifyCAConnection()
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			try
 			{
 				var request = new DescribeCertificateAuthorityRequest()
@@ -146,17 +159,21 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 				Logger.Error($"Unable to communicate with Amazon CA: {ex.Message}");
 				throw;
 			}
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 		}
 
 		public int RevokeCertificate(RevokeCertificateRequest request)
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			request.CertificateAuthorityArn = Config.CAArn;
 			var _ = GetPCAClient().RevokeCertificate(request);
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return (int)RequestDisposition.REVOKED;
 		}
 
 		public List<ACMPCACertificate> GetAuditReport()
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			CreateCertificateAuthorityAuditReportRequest request = new CreateCertificateAuthorityAuditReportRequest()
 			{
 				CertificateAuthorityArn = Config.CAArn,
@@ -176,18 +193,22 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 			using (StreamReader reader = new StreamReader(responseStream))
 			{
 				string respStr = reader.ReadToEnd();
+				Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 				return JsonConvert.DeserializeObject<List<ACMPCACertificate>>(respStr);
 			}
 		}
 
 		private IAmazonACMPCA GetPCAClient()
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			IAmazonACMPCA client = new AmazonACMPCAClient(Config.AccessKey, Config.AccessSecret, Config.GetRegion());
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return client;
 		}
 
 		private IAmazonS3 GetS3Client()
 		{
+			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			string region = "";
 			using (IAmazonS3 tempClient = new AmazonS3Client(Config.AccessKey, Config.AccessSecret, Config.GetRegion()))
 			{
@@ -195,6 +216,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 				region = bucketResponse.Location.Value;
 			}
 			var s3Client = new AmazonS3Client(Config.AccessKey, Config.AccessSecret, RegionEndpoint.GetBySystemName(region));
+			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return s3Client;
 		}
 	}
