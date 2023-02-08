@@ -2,7 +2,8 @@
   "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
   "integration_type": "ca-gateway",
   "name": "Amazon ACM PCA CA AnyGateway",
-  "status": "prototype",
+  "status": "pilot",
+  "support_level": "community",
   "link_github": false,
   "description": "This integration allows for the Synchronization, Enrollment, and Revocation of certificates from Amazon Certificate Manager Private CA."
 }
