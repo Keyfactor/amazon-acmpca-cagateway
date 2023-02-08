@@ -20,7 +20,10 @@ using CAProxy.Common;
 using CSS.PKI;
 
 using Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client;
+using Keyfactor.Logging;
 using Keyfactor.PKI.PEM;
+
+using Microsoft.Extensions.Logging;
 
 using Newtonsoft.Json;
 
@@ -45,16 +48,20 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 
 		private ACMPCAClient Client { get; set; }
 
+		private static readonly ILogger Log = LogHandler.GetClassLogger<ACMPCAConnector>();
+
 		#endregion Fields and Constructors
 
 		#region ICAConnector Methods
 
 		public override void Initialize(ICAConnectorConfigProvider configProvider)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			string rawconfig = JsonConvert.SerializeObject(configProvider.CAConnectionData);
 			ACMPCAConfig config = JsonConvert.DeserializeObject<ACMPCAConfig>(rawconfig);
 
 			Client = new ACMPCAClient(config);
+			Log.MethodExit(LogLevel.Trace);
 		}
 
 		/// <summary>
@@ -70,6 +77,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <returns></returns>
 		public override EnrollmentResult Enroll(ICertificateDataReader certificateDataReader, string csr, string subject, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo, PKIConstants.X509.RequestFormat requestFormat, RequestUtilities.EnrollmentType enrollmentType)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			string csrString = PemUtilities.DERToPEM(PemUtilities.PEMToDER(csr), PemUtilities.PemObjectType.CertRequest);
 			IssueCertificateRequest issueRequest = new IssueCertificateRequest
 			{
@@ -91,7 +99,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 			Thread.Sleep(1000);
 
 			CAConnectorCertificate cert = Client.GetCertificateByARN(certArn);
-
+			Log.MethodExit(LogLevel.Trace);
 			return new EnrollmentResult()
 			{
 				CARequestID = certArn.Split('/')[3],
@@ -108,7 +116,9 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <returns></returns>
 		public override CAConnectorCertificate GetSingleRecord(string caRequestID)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			CAConnectorCertificate cert = Client.GetCertificateByRequestID(caRequestID);
+			Log.MethodExit(LogLevel.Trace);
 			return cert;
 		}
 
@@ -117,7 +127,9 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// </summary>
 		public override void Ping()
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			Client.VerifyCAConnection();
+			Log.MethodExit(LogLevel.Trace);
 		}
 
 		/// <summary>
@@ -128,6 +140,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <param name="revocationReason">The revocation reason.</param>
 		public override int Revoke(string caRequestID, string hexSerialNumber, uint revocationReason)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			string serialNum = caRequestID;
 
 			RevokeCertificateRequest revokeCertificateRequest = new RevokeCertificateRequest()
@@ -169,7 +182,9 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 					revokeCertificateRequest.RevocationReason = RevocationReason.UNSPECIFIED;
 					break;
 			}
-			return Client.RevokeCertificate(revokeCertificateRequest);
+			var ret = Client.RevokeCertificate(revokeCertificateRequest);
+			Log.MethodExit(LogLevel.Trace);
+			return ret;
 		}
 
 		/// <summary>
@@ -181,8 +196,9 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <param name="cancelToken">The cancellation token.</param>
 		public override void Synchronize(ICertificateDataReader certificateDataReader, BlockingCollection<CAConnectorCertificate> blockingBuffer, CertificateAuthoritySyncInfo certificateAuthoritySyncInfo, CancellationToken cancelToken)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			var certs = Client.GetAuditReport();
-
+			Log.LogDebug($"Sync found {certs.Count} certs.");
 			foreach (var cert in certs)
 			{
 				CAConnectorCertificate dbCert = certificateDataReader.GetCertificateRecord(cert.CertificateARN, string.Empty);
@@ -204,6 +220,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 					}
 
 					dbCert.CARequestID = cert.CertificateARN.Split('/')[3];
+					Log.LogTrace($"Processing cert with request ID {dbCert.CARequestID}");
 					dbCert.Certificate = pcaCert.Certificate;
 					dbCert.Status = status;
 					if (status == (int)RequestDisposition.REVOKED)
@@ -216,7 +233,12 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 
 					blockingBuffer.Add(dbCert);
 				}
+				else
+				{
+					Log.LogTrace($"Cert with request ID {cert.CertificateARN.Split('/')[3]} has unchanged status and this is not a full sync, skipping...");
+				}
 			}
+			Log.MethodExit(LogLevel.Trace);
 		}
 
 		/// <summary>
@@ -225,6 +247,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <param name="connectionInfo">The information used to connect to the CA.</param>
 		public override void ValidateCAConnectionInfo(Dictionary<string, object> connectionInfo)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			List<string> errors = new List<string>();
 
 			string accessKey = connectionInfo.ContainsKey(ACMPCAConstants.ACCESS_KEY) ? (string)connectionInfo[ACMPCAConstants.ACCESS_KEY] : string.Empty;
@@ -273,6 +296,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 			{
 				ThrowValidationException(errors);
 			}
+			Log.MethodExit(LogLevel.Trace);
 		}
 
 		/// <summary>
@@ -281,6 +305,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 		/// <param name="productInfo">The product information.</param>
 		public override void ValidateProductInfo(EnrollmentProductInfo productInfo, Dictionary<string, object> connectionInfo)
 		{
+			Log.MethodEntry(LogLevel.Trace);
 			try
 			{
 				var template = ACMPCAConstants.TemplateARNs[productInfo.ProductID.ToLower()];
@@ -293,6 +318,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA
 			{
 				throw new Exception("ProductID not recognized.", ex);
 			}
+			Log.MethodExit(LogLevel.Trace);
 		}
 
 		#region Obsolete Methods
