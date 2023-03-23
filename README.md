@@ -2,7 +2,7 @@
 
 This integration allows for the Synchronization, Enrollment, and Revocation of certificates from Amazon Certificate Manager Private CA.
 
-#### Integration status: Pilot - Ready for use in test environments. Not for use in production.
+#### Integration status: Production - Ready for use in production environments.
 
 ## About the Keyfactor AnyGateway CA Connector
 
@@ -12,7 +12,7 @@ This repository contains an AnyGateway CA Connector, which is a plugin to the Ke
 
 ## Support for Amazon ACM PCA CA AnyGateway
 
-Amazon ACM PCA CA AnyGateway is open source and community supported, meaning that there is **no SLA** applicable for these tools.
+Amazon ACM PCA CA AnyGateway is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket with your Keyfactor representative.
 
 ###### To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
 ___
