@@ -4,7 +4,7 @@
   "name": "Amazon ACM PCA CA AnyGateway",
   "status": "production",
   "support_level": "kf-supported",
-  "update_catalog": false,
-  "link_github": false,
+  "update_catalog": true,
+  "link_github": true,
   "description": "This integration allows for the Synchronization, Enrollment, and Revocation of certificates from Amazon Certificate Manager Private CA."
 }
