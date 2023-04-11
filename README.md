@@ -3,7 +3,6 @@
 This integration allows for the Synchronization, Enrollment, and Revocation of certificates from Amazon Certificate Manager Private CA.
 
 #### Integration status: Production - Ready for use in production environments.
-=======
 
 ## About the Keyfactor AnyGateway CA Connector
 
