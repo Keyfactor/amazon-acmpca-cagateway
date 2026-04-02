@@ -6,5 +6,6 @@
   "support_level": "kf-supported",
   "update_catalog": true,
   "link_github": true,
+  "release_dir": "amazon-acmpca-cagateway/bin/Release",
   "description": "This integration allows for the Synchronization, Enrollment, and Revocation of certificates from Amazon Certificate Manager Private CA."
 }
