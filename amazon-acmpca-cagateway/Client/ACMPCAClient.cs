@@ -174,6 +174,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 		public List<ACMPCACertificate> GetAuditReport()
 		{
 			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
+			Logger.Trace($"Creating audit report request with:\n\tCAArn: {Config.CAArn}\n\tS3 Bucket: {Config.S3Bucket}");
 			CreateCertificateAuthorityAuditReportRequest request = new CreateCertificateAuthorityAuditReportRequest()
 			{
 				CertificateAuthorityArn = Config.CAArn,
@@ -201,6 +202,7 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 		private IAmazonACMPCA GetPCAClient()
 		{
 			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
+			Logger.Trace($"Creating PCA Client with region {Config.GetRegion()}");
 			IAmazonACMPCA client = new AmazonACMPCAClient(Config.AccessKey, Config.AccessSecret, Config.GetRegion());
 			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return client;
@@ -210,11 +212,21 @@ namespace Keyfactor.Extensions.AnyGateway.Amazon.ACMPCA.Client
 		{
 			Logger.MethodEntry(ILogExtensions.MethodLogLevel.Trace);
 			string region = "";
+			Logger.Trace($"Locating region for S3 bucket: {Config.S3Bucket}");
 			using (IAmazonS3 tempClient = new AmazonS3Client(Config.AccessKey, Config.AccessSecret, Config.GetRegion()))
 			{
 				var bucketResponse = tempClient.GetBucketLocation(Config.S3Bucket);
 				region = bucketResponse.Location.Value;
 			}
+			if (string.IsNullOrEmpty(region))
+			{
+				region = "us-east-1";
+			}
+			if (string.Equals(region, "EU", StringComparison.OrdinalIgnoreCase))
+			{
+				region = "eu-west-1";
+			}
+			Logger.Trace($"Creating S3 Client with region {region}");
 			var s3Client = new AmazonS3Client(Config.AccessKey, Config.AccessSecret, RegionEndpoint.GetBySystemName(region));
 			Logger.MethodExit(ILogExtensions.MethodLogLevel.Trace);
 			return s3Client;
